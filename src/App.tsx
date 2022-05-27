@@ -1,14 +1,15 @@
 import { useContext, useEffect } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { SharedMenu, SharedMenuCtx } from './shared-menu';
+import { SharedMenuCtx } from './shared-menu';
 import { getPosition } from './shared-menu/shared-menu.utils';
+import { MyCustomMenu } from './MyCustomMenu';
 
 function App() {
   const { useSharedMenu } = useContext(SharedMenuCtx);
   const { show: show1, updateConfig: updateConfig1 } = useSharedMenu('menu-1');
   const { show: show2 } = useSharedMenu('menu-2');
-  const { show: show3, isActive: isActive3 } = useSharedMenu('menu-3');
+  const { show: show3, isActive: isActive3, hide: hide3 } = useSharedMenu('menu-3');
 
   useEffect(() => {
     updateConfig1({
@@ -60,13 +61,14 @@ function App() {
                 position: getPosition(e.target as HTMLElement, 'bottom'),
               });
             }}
+            onMouseLeave={() => hide3()}
           >
             Hover me!
           </button>
 
-          <SharedMenu id="menu-1" />
-          <SharedMenu id="menu-2" />
-          <SharedMenu id="menu-3" />
+          <MyCustomMenu id="menu-1" />
+          <MyCustomMenu id="menu-2" />
+          <MyCustomMenu id="menu-3" />
         </div>
       </header>
     </div>
