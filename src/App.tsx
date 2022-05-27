@@ -61,14 +61,13 @@ function App() {
                 position: getPosition(e.target as HTMLElement, 'bottom'),
               });
             }}
-            onMouseLeave={() => hide3()}
           >
             Hover me!
           </button>
 
           <MyCustomMenu id="menu-1" />
           <MyCustomMenu id="menu-2" />
-          <MyCustomMenu id="menu-3" />
+          <MyCustomMenu id="menu-3" hideOnLeave />
         </div>
       </header>
     </div>
