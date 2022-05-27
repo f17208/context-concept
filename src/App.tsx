@@ -1,23 +1,73 @@
-import React from 'react';
+import { useContext, useEffect } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import { SharedMenu, SharedMenuCtx } from './shared-menu';
+import { getPosition } from './shared-menu/shared-menu.utils';
 
 function App() {
+  const { useSharedMenu } = useContext(SharedMenuCtx);
+  const { show: show1, updateConfig: updateConfig1 } = useSharedMenu('menu-1');
+  const { show: show2 } = useSharedMenu('menu-2');
+  const { show: show3, isActive: isActive3 } = useSharedMenu('menu-3');
+
+  useEffect(() => {
+    updateConfig1({
+      onHide: () => {
+        alert('onHide: triggered!');
+      },
+      onShow: () => {
+        alert('onShow: triggered!');
+      },
+    });
+    // You don't really want to do that (update config loop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        
+        <div style={{ display: 'flex', gap: 15 }}>
+          <button type="button" 
+            onClick={e => {
+              show1({
+                position: getPosition(e.target as HTMLElement, 'right'),
+              });
+            }}
+          >
+            Click me!
+          </button>
+
+          <button 
+            type="button" 
+            onContextMenu={e => {
+              e.preventDefault();
+              show2({ 
+                position: getPosition(e.target as HTMLElement, 'bottom'),
+              });
+            }}
+          >
+            Right click me!
+          </button>
+
+          <button 
+            type="button" 
+            onMouseEnter={e => {
+              e.preventDefault();
+              if (isActive3) return;
+              show3({ 
+                position: getPosition(e.target as HTMLElement, 'bottom'),
+              });
+            }}
+          >
+            Hover me!
+          </button>
+
+          <SharedMenu id="menu-1" />
+          <SharedMenu id="menu-2" />
+          <SharedMenu id="menu-3" />
+        </div>
       </header>
     </div>
   );

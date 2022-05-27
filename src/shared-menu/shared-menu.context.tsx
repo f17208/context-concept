@@ -3,19 +3,24 @@ import {
   createContext,
   useState,
   useCallback,
-  ReactNode,
   useMemo,
   useEffect,
 } from 'react';
-import { clearMenu, hideMenu, showMenu } from './shared-menu.utils';
+import { 
+  clearMenu, 
+  hideMenu, 
+  showMenu, 
+  setMenuConfig, 
+  updateMenuConfig,
+} from './shared-menu.utils';
 
 export interface SharedMenuConfig {
-  body: ReactNode;
-  position: {
+  position?: {
     x: number;
     y: number;
-  },
-  onShow?: (config: SharedMenuConfig) => void;
+  };
+  // can be added more (i.e. onUpdate)
+  onShow?: () => void;
   onHide?: () => void;
   onClear?: () => void;
 }
@@ -25,33 +30,43 @@ export type ShowProps = Partial<SharedMenuConfig>;
 export interface IUseSharedMenu {
   isActive: boolean;
   config: SharedMenuConfig | null;
-  show: (config: ShowProps) => void;
+  show: (config?: ShowProps) => void;
+  setConfig: (config: ShowProps) => void; // sets whole new config for menu, without showing
+  updateConfig: (config: ShowProps) => void; // updates new config for menu, without showing
   hide: () => void;
+  toggle: () => void;
   clear: () => void;
 }
 
 export interface ISharedMenuCtx {
-  zIndex: number;
   activeMenuId: string | null;
-  show: (id: string, config: ShowProps) => void; // shows or updates Active menu
+  show: (id: string, config: ShowProps) => void; // shows and updates Active menu config
+  setConfig: (id: string, config: ShowProps) => void; // sets whole new config for menu, without showing
+  updateConfig: (id: string, config: ShowProps) => void; // updates new config for menu, without showing
   hide: (id: string) => void;
+  toggle: (id: string) => void;
   clear: (id: string) => void;
   hideActive: () => void;
-  useSharedMenu: (id: string) => IUseSharedMenu;
+  useSharedMenu: (id: string, config?: Partial<SharedMenuConfig>) => IUseSharedMenu;
 }
 
 export const defaultState = {
-  zIndex: 100,
   activeMenuId: null,
   show: () => undefined,
+  setConfig: () => undefined,
+  updateConfig: () => undefined,
   hide: () => undefined,
   clear: () => undefined,
+  toggle: () => undefined,
   hideActive: () => undefined,
   useSharedMenu: () => ({
     isActive: false,
     config: null,
     show: () => undefined,
+    setConfig: () => undefined,
+    updateConfig: () => undefined,
     hide: () => undefined,
+    toggle: () => undefined,
     clear: () => undefined,
   }),
 };
@@ -67,16 +82,26 @@ export interface ISharedMenuProviderProps {
 
 export const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
   children,
-  zIndex = defaultState.zIndex,
   hideOnScroll = true,
   isActive = true,
 }) => {
   const [menus, setMenus] = useState<Record<string, SharedMenuConfig>>({});
   const [activeMenuId, setActiveMenuId] = useState<string | null>(defaultState.activeMenuId);
 
-  const show = useCallback((id: string, config: ShowProps) => {
-    showMenu(id, config, menus, setMenus, activeMenuId, setActiveMenuId);
-  }, [setMenus, activeMenuId, setActiveMenuId, menus]);
+  const setConfig = useCallback((id: string, config?: ShowProps) => {
+    setMenuConfig(id, config || {}, setMenus);
+  }, [setMenus]);
+
+  const updateConfig = useCallback((id: string, config?: ShowProps) => {
+    updateMenuConfig(id, config || {}, setMenus);
+  }, [setMenus]);
+
+  const show = useCallback((id: string, config?: ShowProps) => {
+    if (config) {
+      updateConfig(id, config);
+    }
+    showMenu(id, menus, activeMenuId, setActiveMenuId);
+  }, [activeMenuId, updateConfig, setActiveMenuId, menus]);
 
   const clear = useCallback((id: string) => {
     clearMenu(id, menus, setMenus);
@@ -86,19 +111,41 @@ export const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
     hideMenu(id, menus, setActiveMenuId);
   }, [setActiveMenuId, menus]);
 
+  const toggle = useCallback((id: string) => {
+    if (id === activeMenuId) {
+      hide(id);
+    } else {
+      show(id);
+    }
+  }, [activeMenuId, show, hide]);
+
   const hideActive = useCallback(() => {
     if (activeMenuId) hide(activeMenuId);
   }, [activeMenuId, hide]);
 
-  const useSharedMenu = useCallback<(id: string) => IUseSharedMenu>((id) => {
+  const useSharedMenu = useCallback<
+    (id: string) => IUseSharedMenu
+  >((id) => {
     return {
       isActive: activeMenuId === id,
       config: menus[id] || null,
-      show: (config: ShowProps) => show(id, config),
+      show: (config?: ShowProps) => show(id, config),
       hide: () => hide(id),
+      toggle: () => toggle(id),
       clear: () => clear(id),
+      setConfig: (config: SharedMenuConfig) => setConfig(id, config),
+      updateConfig: (config: SharedMenuConfig) => updateConfig(id, config),
     };
-  }, [menus]);
+  }, [
+    menus, 
+    activeMenuId, 
+    show,
+    hide, 
+    toggle, 
+    clear,
+    setConfig,
+    updateConfig,
+  ]);
 
   const doHideOnScroll = useCallback(() => {
     if (hideOnScroll) hideActive();
@@ -114,18 +161,22 @@ export const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
 
   // this will be accessible via useContext
   const value = useMemo<ISharedMenuCtx>(() => ({
-    zIndex,
     show,
     hide,
     clear,
+    toggle,
+    setConfig,
+    updateConfig,
     hideActive,
     useSharedMenu,
     activeMenuId,
   }), [
-    zIndex,
     show,
     hide,
     clear,
+    setConfig,
+    updateConfig,
+    toggle,
     hideActive,
     useSharedMenu,
     activeMenuId,

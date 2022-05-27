@@ -1,40 +1,45 @@
 import { Dispatch, SetStateAction } from 'react';
-import { SharedMenuConfig, ShowProps } from './shared-menu.context';
+import { SharedMenuConfig } from './shared-menu.context';
+
+export const updateMenuConfig = (
+  id: string,
+  config: Partial<SharedMenuConfig>,
+  setMenus: Dispatch<SetStateAction<Record<string, SharedMenuConfig>>>,
+) => {
+  setMenus(currentMenus => ({
+    ...currentMenus,
+    [id]: {
+      ...currentMenus[id],
+      ...config,
+    },
+  }));
+}
+
+export const setMenuConfig = (
+  id: string,
+  config: Partial<SharedMenuConfig>,
+  setMenus: Dispatch<SetStateAction<Record<string, SharedMenuConfig>>>,
+) => {
+  setMenus(currentMenus => ({
+    ...currentMenus,
+    [id]: config,
+  }));
+}
 
 export const showMenu = (
   id: string,
-  config: ShowProps,
   menus: Record<string, SharedMenuConfig>,
-  setMenus: Dispatch<SetStateAction<Record<string, SharedMenuConfig>>>,
   activeMenuId: string | null,
   setActiveMenuId: Dispatch<SetStateAction<string | null>>,
 ) => {
   const isAlreadyShown = activeMenuId === id;
-
-  const newConfig = {
-    ...menus[id], // old config
-    ...config, // update config
-  };
-
-  // handle missing data
-  if (!newConfig.position) {
-    newConfig.position = { x: 0, y: 0 };
-  }
-  if (!newConfig.body) {
-    newConfig.body = null;
-  }
-
-  setMenus(currentMenus => ({
-    ...currentMenus,
-    [id]: newConfig,
-  }));
 
   if (!isAlreadyShown) {
     setActiveMenuId(id);
 
     const onShow = !isAlreadyShown && menus[id]?.onShow;
     if (onShow) {
-      onShow(menus[id]);
+      onShow();
     }
   }
 };
@@ -86,3 +91,22 @@ export const hideActiveMenu = (
 ) => {
   if (activeMenuId) hideMenuFn(activeMenuId, menus, setActiveMenuId);
 };
+
+// this should be moved in a separate file/folder, just quick-prototyping now, ok?
+export function getPosition(
+  target: HTMLElement,
+  align: 'right' | 'bottom',
+) {
+    let x, y;
+    switch (align) {
+      case 'right': // exactly to the right of the target element
+        x = target.offsetLeft + target.offsetWidth;
+        y = target.offsetTop;
+        break;
+      case 'bottom': // exactly below the target element
+        x = target.offsetLeft;
+        y = target.offsetTop + target.offsetHeight;
+        break;    
+    }
+    return { x , y };
+}
