@@ -1,18 +1,21 @@
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { SharedMenuCtx } from './shared-menu';
 import { getPosition } from './shared-menu/shared-menu.utils';
 import { MyCustomMenu } from './MyCustomMenu';
+import { useSharedMenu } from './shared-menu/shared-menu.hooks';
+import { MyCustomData, MyCustomDataContextMenuCtx } from './types';
 
 function App() {
-  const { useSharedMenu } = useContext(SharedMenuCtx);
-  const { show: show1, updateConfig: updateConfig1 } = useSharedMenu('menu-1');
-  const { show: show2 } = useSharedMenu('menu-2');
-  const { show: show3, isActive: isActive3, hide: hide3 } = useSharedMenu('menu-3');
+  const { show: show1, updateConfig: updateConfig1 } = useSharedMenu<MyCustomData>('menu-1', MyCustomDataContextMenuCtx);
+  const { show: show2 } = useSharedMenu<MyCustomData>('menu-2', MyCustomDataContextMenuCtx);
+  const { show: show3, isActive: isActive3 } = useSharedMenu<MyCustomData>('menu-3', MyCustomDataContextMenuCtx);
 
   useEffect(() => {
     updateConfig1({
+      customProps: {
+        userId: '1234',
+      },
       onHide: () => {
         alert('onHide: triggered!');
       },

@@ -1,11 +1,11 @@
 import { Dispatch, SetStateAction } from 'react';
-import { SharedMenuConfig } from './shared-menu.context';
+import { ISharedMenuConfig } from './shared-menu.context';
 
-export const updateMenuConfig = (
+export function updateMenuConfig<T>(
   id: string,
-  config: Partial<SharedMenuConfig>,
-  setMenus: Dispatch<SetStateAction<Record<string, SharedMenuConfig>>>,
-) => {
+  config: Partial<ISharedMenuConfig<T>>,
+  setMenus: Dispatch<SetStateAction<Record<string, ISharedMenuConfig<T>>>>,
+) {
   setMenus(currentMenus => ({
     ...currentMenus,
     [id]: {
@@ -15,23 +15,23 @@ export const updateMenuConfig = (
   }));
 }
 
-export const setMenuConfig = (
+export function setMenuConfig<T>(
   id: string,
-  config: Partial<SharedMenuConfig>,
-  setMenus: Dispatch<SetStateAction<Record<string, SharedMenuConfig>>>,
-) => {
+  config: Partial<ISharedMenuConfig<T>>,
+  setMenus: Dispatch<SetStateAction<Record<string, ISharedMenuConfig<T>>>>,
+) {
   setMenus(currentMenus => ({
     ...currentMenus,
     [id]: config,
-  }));
+  }) as Record<string, ISharedMenuConfig<T>>);
 }
 
-export const showMenu = (
+export function showMenu<T>(
   id: string,
-  menus: Record<string, SharedMenuConfig>,
+  menus: Record<string, ISharedMenuConfig<T>>,
   activeMenuId: string | null,
   setActiveMenuId: Dispatch<SetStateAction<string | null>>,
-) => {
+) {
   const isAlreadyShown = activeMenuId === id;
 
   if (!isAlreadyShown) {
@@ -44,11 +44,11 @@ export const showMenu = (
   }
 };
 
-export const clearMenu = (
+export function clearMenu<T>(
   id: string,
-  menus: Record<string, SharedMenuConfig>,
-  setMenus: Dispatch<SetStateAction<Record<string, SharedMenuConfig>>>,
-) => {
+  menus: Record<string, ISharedMenuConfig<T>>,
+  setMenus: Dispatch<SetStateAction<Record<string, ISharedMenuConfig<T>>>>,
+) {
   const onClear = menus[id]?.onClear;
 
   const newMenus = { ...menus };
@@ -60,11 +60,11 @@ export const clearMenu = (
   }
 };
 
-export const hideMenu = (
+export function hideMenu<T>(
   id: string,
-  menus: Record<string, SharedMenuConfig>,
+  menus: Record<string, ISharedMenuConfig<T>>,
   setActiveMenuId: Dispatch<SetStateAction<string | null>>,
-) => {
+) {
   const onHide = menus[id]?.onHide;
 
   setActiveMenuId(activeId => {
@@ -79,16 +79,16 @@ export const hideMenu = (
   }
 };
 
-export const hideActiveMenu = (
+export function hideActiveMenu<T>(
   hideMenuFn: (
     id: string,
-    menus: Record<string, SharedMenuConfig>,
+    menus: Record<string, ISharedMenuConfig<T>>,
     setActiveMenuId: Dispatch<SetStateAction<string | null>>,
   ) => void,
   activeMenuId: string | null,
-  menus: Record<string, SharedMenuConfig>,
+  menus: Record<string, ISharedMenuConfig<T>>,
   setActiveMenuId: Dispatch<SetStateAction<string | null>>,
-) => {
+) {
   if (activeMenuId) hideMenuFn(activeMenuId, menus, setActiveMenuId);
 };
 

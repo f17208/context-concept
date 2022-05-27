@@ -5,16 +5,16 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { SharedMenuProvider } from './shared-menu';
+import { MyCustomDataContextMenuProvider } from './types';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <SharedMenuProvider>
+    <MyCustomDataContextMenuProvider>
       <App />
-    </SharedMenuProvider>
+    </MyCustomDataContextMenuProvider>
   </React.StrictMode>
 );
 
