@@ -6,6 +6,7 @@ import {
   useMemo,
   useEffect,
 } from 'react';
+
 import { 
   clearMenu, 
   hideMenu, 
@@ -14,7 +15,7 @@ import {
   updateMenuConfig,
 } from './shared-menu.utils';
 
-export interface SharedMenuConfig {
+export interface ISharedMenuConfig {
   position?: {
     x: number;
     y: number;
@@ -25,14 +26,16 @@ export interface SharedMenuConfig {
   onClear?: () => void;
 }
 
-export type ShowProps = Partial<SharedMenuConfig>;
+export type ShowProps = Partial<ISharedMenuConfig>;
+export type SetConfigProps = Partial<ISharedMenuConfig>;
+export type UpdateConfigProps = Partial<ISharedMenuConfig>;
 
 export interface IUseSharedMenu {
   isActive: boolean;
-  config: SharedMenuConfig | null;
+  config: ISharedMenuConfig | null;
   show: (config?: ShowProps) => void;
-  setConfig: (config: ShowProps) => void; // sets whole new config for menu, without showing
-  updateConfig: (config: ShowProps) => void; // updates new config for menu, without showing
+  setConfig: (config: SetConfigProps) => void; // sets whole new config for menu, without showing
+  updateConfig: (config: UpdateConfigProps) => void; // updates new config for menu, without showing
   hide: () => void;
   toggle: () => void;
   clear: () => void;
@@ -41,13 +44,13 @@ export interface IUseSharedMenu {
 export interface ISharedMenuCtx {
   activeMenuId: string | null;
   show: (id: string, config: ShowProps) => void; // shows and updates Active menu config
-  setConfig: (id: string, config: ShowProps) => void; // sets whole new config for menu, without showing
-  updateConfig: (id: string, config: ShowProps) => void; // updates new config for menu, without showing
+  setConfig: (id: string, config: SetConfigProps) => void; // sets whole new config for menu, without showing
+  updateConfig: (id: string, config: UpdateConfigProps) => void; // updates new config for menu, without showing
   hide: (id: string) => void;
   toggle: (id: string) => void;
   clear: (id: string) => void;
   hideActive: () => void;
-  useSharedMenu: (id: string, config?: Partial<SharedMenuConfig>) => IUseSharedMenu;
+  useSharedMenu: (id: string, config?: Partial<ISharedMenuConfig>) => IUseSharedMenu;
 }
 
 export const defaultState = {
@@ -76,23 +79,21 @@ export const SharedMenuCtx = createContext<ISharedMenuCtx>(defaultState);
 export interface ISharedMenuProviderProps {
   children: JSX.Element;
   zIndex?: number;
-  hideOnScroll?: boolean;
   isActive?: boolean;
 }
 
 export const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
   children,
-  hideOnScroll = true,
   isActive = true,
 }) => {
-  const [menus, setMenus] = useState<Record<string, SharedMenuConfig>>({});
+  const [menus, setMenus] = useState<Record<string, ISharedMenuConfig>>({});
   const [activeMenuId, setActiveMenuId] = useState<string | null>(defaultState.activeMenuId);
 
-  const setConfig = useCallback((id: string, config?: ShowProps) => {
+  const setConfig = useCallback((id: string, config?: SetConfigProps) => {
     setMenuConfig(id, config || {}, setMenus);
   }, [setMenus]);
 
-  const updateConfig = useCallback((id: string, config?: ShowProps) => {
+  const updateConfig = useCallback((id: string, config?: UpdateConfigProps) => {
     updateMenuConfig(id, config || {}, setMenus);
   }, [setMenus]);
 
@@ -133,8 +134,8 @@ export const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
       hide: () => hide(id),
       toggle: () => toggle(id),
       clear: () => clear(id),
-      setConfig: (config: SharedMenuConfig) => setConfig(id, config),
-      updateConfig: (config: SharedMenuConfig) => updateConfig(id, config),
+      setConfig: (config: SetConfigProps) => setConfig(id, config),
+      updateConfig: (config: UpdateConfigProps) => updateConfig(id, config),
     };
   }, [
     menus, 
@@ -146,18 +147,6 @@ export const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
     setConfig,
     updateConfig,
   ]);
-
-  const doHideOnScroll = useCallback(() => {
-    if (hideOnScroll) hideActive();
-  }, [hideActive, hideOnScroll]);
-
-  // // add/remove event listeners
-  useEffect(() => {
-    window.addEventListener('scroll', doHideOnScroll, false);
-    return function cleanup() {
-      window.removeEventListener('scroll', doHideOnScroll, false);
-    };
-  }, [doHideOnScroll]);
 
   // this will be accessible via useContext
   const value = useMemo<ISharedMenuCtx>(() => ({

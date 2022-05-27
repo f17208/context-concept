@@ -21,13 +21,13 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
   return (
     <Dropdown
       onMouseLeave={() => hideOnLeave && hide()}
-      style={{ position: 'fixed', top: y, left: x }}
+      style={{ position: 'fixed', top: y, left: x }}
       isOpen={isActive}
       toggle={toggle}
     >
       <DropdownMenu>
-        <DropdownItem>Dummy Action {id}</DropdownItem>
-        <DropdownItem>Dummy Action {id}</DropdownItem>
+        <DropdownItem>Dummy Action A {id}</DropdownItem>
+        <DropdownItem>Dummy Action B {id}</DropdownItem>
       </DropdownMenu>
     </Dropdown>
   );
