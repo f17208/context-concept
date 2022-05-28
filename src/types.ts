@@ -1,4 +1,4 @@
-import { createSharedMenuCtx, GetSharedMenuProvider } from "./shared-menu";
+import { createSharedMenuCtx, getSharedMenuProvider } from "./shared-menu";
 
 export type MyCustomDataProps = {
   userId: string | null;
@@ -11,4 +11,4 @@ export const defaultCustomData = {
 }
 
 export const MyCustomDataContextMenuCtx = createSharedMenuCtx<MyCustomData>(defaultCustomData);
-export const MyCustomDataContextMenuProvider = GetSharedMenuProvider(MyCustomDataContextMenuCtx);
+export const MyCustomDataContextMenuProvider = getSharedMenuProvider(MyCustomDataContextMenuCtx);

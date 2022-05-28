@@ -4,66 +4,59 @@ import {
   useState,
   useCallback,
   useMemo,
-  useEffect,
   Context,
 } from 'react';
 
-import { 
-  clearMenu, 
-  hideMenu, 
-  showMenu, 
-  setMenuConfig, 
-  updateMenuConfig,
-} from './shared-menu.utils';
-
-export interface ISharedMenuConfig<T> {
+// the basic attributes of each menu's configuration
+export interface ISharedMenuConfig {
+  // in theory, since this is not part of the menu's lifecycle, it could be moved into custom props
+  // but it could also stay here because we probably want to have it without redefining it every time
   position?: {
     x: number;
     y: number;
   };
-  customProps: T | null;
   // can be added more (i.e. onUpdate)
   onShow?: () => void;
   onHide?: () => void;
   onClear?: () => void;
 }
 
+// the interface exposed by useSharedMenu
 export interface IUseSharedMenu<T> {
   isActive: boolean;
-  config: ISharedMenuConfig<T> | null;
-  show: (config?: Partial<ISharedMenuConfig<T>>) => void;
-  setConfig: (config?: Partial<ISharedMenuConfig<T>>) => void; // sets whole new config for menu, without showing
-  updateConfig: (config?: Partial<ISharedMenuConfig<T>>) => void; // updates new config for menu, without showing
+  config: ISharedMenuConfig | null;
+  customProps: T | null;
+  show: (config?: Partial<ISharedMenuConfig>) => void;
+  setConfig: (config: Partial<ISharedMenuConfig>, update?: boolean) => void; // sets whole new config for menu, without showing
+  setCustomProps: (customProps: T, update?: boolean) => void;
   hide: () => void;
   toggle: () => void;
   clear: () => void;
 }
 
+// the interface exposed by useContext
 export interface ISharedMenuCtx<T> {
-  menus: Record<string, ISharedMenuConfig<T>>;
   activeMenuId: string | null;
-  show: (id: string, config?: Partial<ISharedMenuConfig<T>>) => void; // shows and updates Active menu config
-  setConfig: (id: string, config?: Partial<ISharedMenuConfig<T>>) => void; // sets whole new config for menu, without showing
-  updateConfig: (id: string, config?: Partial<ISharedMenuConfig<T>>) => void; // updates new config for menu, without showing
-  hide: (id: string) => void;
-  toggle: (id: string) => void;
-  clear: (id: string) => void;
   hideActive: () => void;
+  useSharedMenu: (id: string, config?: Partial<ISharedMenuConfig>) => IUseSharedMenu<T>;
 }
 
-
-export function createSharedMenuCtx<T>(defaultCustomProps: T) {
+// we need a function for creating the context with generics, and passing it the default custom props
+export function createSharedMenuCtx<T>(defaultCustomProps?: T) {
   const defaultState = {
-    menus: {},
-    customProps: defaultCustomProps,
     activeMenuId: null,
-    show: () => undefined,
-    setConfig: () => undefined,
-    updateConfig: () => undefined,
-    hide: () => undefined,
-    clear: () => undefined,
-    toggle: () => undefined,
     hideActive: () => undefined,
+    useSharedMenu: () => ({
+      isActive: false,
+      config: null,
+      customProps: defaultCustomProps || null,
+      show: () => void 0,
+      setConfig: () => void 0,
+      setCustomProps: () => void 0,
+      hide: () => void 0,
+      toggle: () => void 0,
+      clear: () => void 0,
+    })
   };
 
   return createContext<ISharedMenuCtx<T>>(defaultState);
@@ -71,39 +64,85 @@ export function createSharedMenuCtx<T>(defaultCustomProps: T) {
 
 export interface ISharedMenuProviderProps {
   children: JSX.Element;
-  zIndex?: number;
-  isActive?: boolean;
 }
 
-export function GetSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T>>) {
+export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T>>) {
   const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
     children,
-    isActive = true,
   }) => {
-    const [menus, setMenus] = useState<Record<string, ISharedMenuConfig<T>>>({});
+    type MenuType = Record<string, {
+      config: ISharedMenuConfig;
+      customProps: T;
+    }>;
+
+    const [menus, setMenus] = useState<MenuType>({});
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   
-    const setConfig = useCallback((id: string, config?: Partial<ISharedMenuConfig<T>>) => {
-      setMenuConfig(id, config || {}, setMenus);
+    const setConfig = useCallback((id: string, config?: Partial<ISharedMenuConfig>, update?: boolean) => {
+      setMenus(currentMenus => ({
+        ...currentMenus,
+        [id]: { 
+          ...currentMenus[id],
+          config: update 
+            ? { ...currentMenus[id]?.config, ...config } // merge
+            : config, // replace
+        },
+      }) as MenuType);
     }, [setMenus]);
   
-    const updateConfig = useCallback((id: string, config?: Partial<ISharedMenuConfig<T>>) => {
-      updateMenuConfig(id, config || {}, setMenus);
+    const setCustomProps = useCallback((id: string, customProps?: T | null, update?: boolean) => {
+      setMenus(currentMenus => ({
+        ...currentMenus,
+        [id]: { 
+          ...currentMenus[id],
+          customProps: update 
+            ? { ...currentMenus[id]?.customProps, ...customProps } // merge
+            : customProps, // replace
+        },
+      }) as MenuType);
     }, [setMenus]);
   
-    const show = useCallback((id: string, config?: Partial<ISharedMenuConfig<T>>) => {
+    const show = useCallback((id: string, config?: Partial<ISharedMenuConfig>) => {
       if (config) {
-        updateConfig(id, config);
+        setConfig(id, config, true);
       }
-      showMenu(id, menus, activeMenuId, setActiveMenuId);
-    }, [activeMenuId, updateConfig, setActiveMenuId, menus]);
+      const isAlreadyShown = activeMenuId === id;
+
+      if (!isAlreadyShown) {
+        setActiveMenuId(id);
+    
+        const onShow = !isAlreadyShown && menus[id]?.config?.onShow;
+        if (onShow) {
+          onShow();
+        }
+      }
+    }, [activeMenuId, setConfig, setActiveMenuId, menus]);
   
     const clear = useCallback((id: string) => {
-      clearMenu(id, menus, setMenus);
+      const onClear = menus[id]?.config?.onClear;
+
+      const newMenus = { ...menus };
+      delete newMenus[id];
+      setMenus(newMenus);
+
+      if (onClear) {
+        onClear();
+      }
     }, [setMenus, menus]);
   
     const hide = useCallback((id: string) => {
-      hideMenu(id, menus, setActiveMenuId);
+      const onHide = menus[id]?.config?.onHide;
+
+      setActiveMenuId(activeId => {
+        if (activeId !== id) {
+          return activeId; // no-op
+        }
+        return null; // actually hide
+      });
+
+      if (onHide) {
+        onHide();
+      }
     }, [setActiveMenuId, menus]);
   
     const toggle = useCallback((id: string) => {
@@ -117,35 +156,40 @@ export function GetSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
     const hideActive = useCallback(() => {
       if (activeMenuId) hide(activeMenuId);
     }, [activeMenuId, hide]);
+
+    const useSharedMenu = useCallback((id: string) => {  
+      return {
+        isActive: activeMenuId === id,
+        config: menus[id]?.config || null,
+        customProps: menus[id]?.customProps || null,
+        show: (config?: Partial<ISharedMenuConfig>) => show(id, config || {}),
+        hide: () => hide(id),
+        toggle: () => toggle(id),
+        clear: () => clear(id),
+        setConfig: (config: Partial<ISharedMenuConfig>, update?: boolean) => setConfig(id, config, update),
+        setCustomProps: (customProps: T, update?: boolean) => setCustomProps(id, customProps, update),
+      };
+    }, [
+      menus, 
+      activeMenuId, 
+      show,
+      hide, 
+      toggle, 
+      clear,
+      setCustomProps,
+      setConfig,
+    ]);
   
     // this will be accessible via useContext
     const value = useMemo<ISharedMenuCtx<T>>(() => ({
-      menus,
-      show,
-      hide,
-      clear,
-      toggle,
-      setConfig,
-      updateConfig,
       hideActive,
       activeMenuId,
+      useSharedMenu,
     }), [
-      menus,
-      show,
-      hide,
-      clear,
-      setConfig,
-      updateConfig,
-      toggle,
       hideActive,
       activeMenuId,
+      useSharedMenu,
     ]);
-  
-    useEffect(() => {
-      if (!isActive && Object.keys(menus).length) {
-        setActiveMenuId(null);
-      }
-    }, [isActive, menus, setActiveMenuId]);
   
     return (
       <SharedMenuCtx.Provider value={value}>

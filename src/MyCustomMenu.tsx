@@ -1,7 +1,6 @@
-import { FC, ReactNode } from 'react';
+import { FC, ReactNode, useContext } from 'react';
 import { Dropdown, DropdownItem, DropdownMenu } from 'reactstrap';
-import { useSharedMenu } from './shared-menu/shared-menu.hooks';
-import { MyCustomData, MyCustomDataContextMenuCtx } from './types';
+import { MyCustomDataContextMenuCtx } from './types';
 
 export interface MyCustomMenuProps {
   id: string;
@@ -15,7 +14,8 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
   id,
   hideOnLeave,
 }) => {
-  const { isActive, toggle, config, hide } = useSharedMenu<MyCustomData>(id, MyCustomDataContextMenuCtx);
+  const { useSharedMenu } = useContext(MyCustomDataContextMenuCtx);
+  const { isActive, toggle, config, customProps, hide } = useSharedMenu(id);
   const { x, y } = config?.position || {};
 
   return (
@@ -28,7 +28,7 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
       <DropdownMenu>
         <DropdownItem>Dummy Action 1 {id}</DropdownItem>
         <DropdownItem>Dummy Action 2 {id}</DropdownItem>
-        {config?.customProps?.userId && <DropdownItem>Logout</DropdownItem>}
+        {customProps?.userId && <DropdownItem>Logout</DropdownItem>}
       </DropdownMenu>
     </Dropdown>
   );

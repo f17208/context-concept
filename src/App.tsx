@@ -1,28 +1,30 @@
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { getPosition } from './shared-menu/shared-menu.utils';
 import { MyCustomMenu } from './MyCustomMenu';
-import { useSharedMenu } from './shared-menu/shared-menu.hooks';
-import { MyCustomData, MyCustomDataContextMenuCtx } from './types';
+import { MyCustomDataContextMenuCtx } from './types';
 
 function App() {
-  const { show: show1, updateConfig: updateConfig1 } = useSharedMenu<MyCustomData>('menu-1', MyCustomDataContextMenuCtx);
-  const { show: show2 } = useSharedMenu<MyCustomData>('menu-2', MyCustomDataContextMenuCtx);
-  const { show: show3, isActive: isActive3 } = useSharedMenu<MyCustomData>('menu-3', MyCustomDataContextMenuCtx);
+  const { useSharedMenu } = useContext(MyCustomDataContextMenuCtx);
+  const { show: show1, setConfig: setConfig1, setCustomProps: setCustomProps1 } = useSharedMenu('menu-1');
+  const { show: show2 } = useSharedMenu('menu-2');
+  const { show: show3, isActive: isActive3 } = useSharedMenu('menu-3');
 
   useEffect(() => {
-    updateConfig1({
-      customProps: {
-        userId: '1234',
-      },
-      onHide: () => {
-        alert('onHide: triggered!');
-      },
+    setConfig1({
       onShow: () => {
-        alert('onShow: triggered!');
+        if (window.confirm('show logout?')) {
+          setCustomProps1({
+            userId: '1234',
+          });
+        } else {
+          setCustomProps1({
+            userId: null,
+          });
+        }
       },
-    });
+    }, true);
     // You don't really want to do that (update config loop)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
