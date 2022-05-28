@@ -153,13 +153,11 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       }
       const isAlreadyShown = activeMenuId === id;
 
-      if (!isAlreadyShown) {
-        const currentlyActiveId = activeMenuId;
-        setActiveMenuId(id);
-        
-        if (currentlyActiveId !== null) {
-          fireEvent(currentlyActiveId, 'onHide');
+      if (!isAlreadyShown) {        
+        if (activeMenuId !== null) {
+          fireEvent(activeMenuId, 'onHide');
         }
+        setActiveMenuId(id);
         fireEvent(id, 'onShow');
       }
     }, [activeMenuId, fireEvent, updateCustomProps, setActiveMenuId]);
