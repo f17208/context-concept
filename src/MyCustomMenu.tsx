@@ -15,8 +15,8 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
   hideOnLeave,
 }) => {
   const { useSharedMenu } = useContext(MyCustomDataContextMenuCtx);
-  const { isActive, toggle, config, customProps, hide } = useSharedMenu(id);
-  const { x, y } = config?.position || {};
+  const { isActive, toggle, customProps, hide } = useSharedMenu(id);
+  const { x, y } = customProps?.position || {};
 
   return (
     <Dropdown

@@ -7,27 +7,52 @@ import { MyCustomDataContextMenuCtx } from './types';
 
 function App() {
   const { useSharedMenu } = useContext(MyCustomDataContextMenuCtx);
-  const { show: show1, setConfig: setConfig1, setCustomProps: setCustomProps1 } = useSharedMenu('menu-1');
+  const { 
+    show: show1, 
+    addListener: addListener1, 
+    removeListener: removeListener1, 
+    updateCustomProps: updateCustomProps1,
+  } = useSharedMenu('menu-1');
+
   const { show: show2 } = useSharedMenu('menu-2');
-  const { show: show3, isActive: isActive3 } = useSharedMenu('menu-3');
+  
+  const { 
+    show: show3, 
+    isActive: isActive3,
+    addListener: addListener3, 
+    removeListener: removeListener3, 
+  } = useSharedMenu('menu-3');
 
   useEffect(() => {
-    setConfig1({
-      onShow: () => {
-        if (window.confirm('show logout?')) {
-          setCustomProps1({
-            userId: '1234',
-          });
-        } else {
-          setCustomProps1({
-            userId: null,
-          });
-        }
-      },
-    }, true);
-    // You don't really want to do that (update config loop)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const handler1 = () => {
+      if (window.confirm('show logout?')) {
+        updateCustomProps1({
+          userId: '1234',
+        });
+      } else {
+        updateCustomProps1({
+          userId: null,
+        });
+      }
+    }
+
+    const handler3 = () => {
+      console.info('Menu 3 was hidden 😱');
+    }
+
+    addListener1('onShow', handler1, false);
+    addListener3('onHide', handler3, false);
+    return () => {
+      removeListener1('onShow', handler1, false);
+      removeListener3('onHide', handler3, false);
+    }
+  }, [
+    updateCustomProps1,
+    addListener1,
+    addListener3,
+    removeListener1,
+    removeListener3,
+  ]);
 
   return (
     <div className="App">

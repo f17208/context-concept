@@ -1,13 +1,16 @@
 import { createSharedMenuCtx, getSharedMenuProvider } from "./shared-menu";
 
-export type MyCustomDataProps = {
+export type MyCustomData = {
   userId: string | null;
+  position: null | {
+    x: number;
+    y: number;
+  }
 }
 
-export type MyCustomData = Partial<MyCustomDataProps>;
-
-export const defaultCustomData = { 
-  userId: null, 
+export const defaultCustomData: MyCustomData = { 
+  userId: null,
+  position: null,
 }
 
 export const MyCustomDataContextMenuCtx = createSharedMenuCtx<MyCustomData>(defaultCustomData);
