@@ -71,8 +71,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
   const SharedMenuProvider: FC<ISharedMenuProviderProps> = ({
     children,
   }) => {
-    type MenuType = Record<string, T>;
-    const [menus, setMenus] = useState<MenuType>({});
+    const [menus, setMenus] = useState<Record<string, T>>({});
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
     const eventCollector = useRef<HTMLDivElement | null>(null);
@@ -119,11 +118,20 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       }
     }, [getCustomProps]);
   
-    const setCustomProps = useCallback((id: string, customProps: Partial<T> | null) => {
-      setMenus(currentMenus => ({
-        ...currentMenus,
-        [id]: customProps,
-      }) as MenuType);
+    const setCustomProps = useCallback((id: string, customProps: T | null) => {
+      setMenus(currentMenus => {
+        if (customProps) {
+          return {
+            ...currentMenus,
+            [id]: customProps,
+          }
+        } else {
+          delete currentMenus[id];
+          return {
+            ...currentMenus
+          }
+        }
+      });
 
       fireEvent(id, 'onUpdate');
     }, [setMenus, fireEvent]);
@@ -135,8 +143,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
           ...currentMenus[id],
           ...customProps
         },
-      }) as MenuType);
-
+      }));
       fireEvent(id, 'onUpdate');
     }, [setMenus, fireEvent]);
   

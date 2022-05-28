@@ -73,7 +73,6 @@ function App() {
           <button 
             type="button" 
             onContextMenu={e => {
-              e.preventDefault();
               show2({ 
                 position: getPosition(e.target as HTMLElement, 'bottom'),
               });
@@ -85,7 +84,6 @@ function App() {
           <button 
             type="button" 
             onMouseEnter={e => {
-              e.preventDefault();
               if (isActive3) return;
               show3({ 
                 position: getPosition(e.target as HTMLElement, 'bottom'),
