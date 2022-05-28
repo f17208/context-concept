@@ -60,7 +60,8 @@ function App() {
         <img src={logo} className="App-logo" alt="logo" />
         
         <div style={{ display: 'flex', gap: 15 }}>
-          <button type="button" 
+          <button 
+            type="button" 
             onClick={e => {
               show1({
                 position: getPosition(e.target as HTMLElement, 'right'),
@@ -73,8 +74,12 @@ function App() {
           <button 
             type="button" 
             onContextMenu={e => {
+              e.preventDefault();
               show2({ 
-                position: getPosition(e.target as HTMLElement, 'bottom'),
+                position: {
+                  x: e.clientX,
+                  y: e.clientY,
+                },
               });
             }}
           >
