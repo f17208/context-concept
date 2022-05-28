@@ -237,7 +237,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       <SharedMenuCtx.Provider value={value}>
         {children}
         <div 
-          style={{ maxWidth: 0, maxHeight: 0, opacity: 0}} 
+          style={{ maxWidth: 0, maxHeight: 0, opacity: 0}} 
           ref={eventCollector}
         />
       </SharedMenuCtx.Provider>

@@ -6,7 +6,7 @@ import { MyCustomMenu } from './MyCustomMenu';
 import { MyCustomDataContextMenuCtx } from './types';
 
 function App() {
-  const { useSharedMenu } = useContext(MyCustomDataContextMenuCtx);
+  const { useSharedMenu } = useContext(MyCustomDataContextMenuCtx);
   const { 
     show: show1, 
     addListener: addListener1, 
