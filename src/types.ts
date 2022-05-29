@@ -1,7 +1,15 @@
 import { createSharedMenuCtx, getSharedMenuProvider } from "./shared-menu";
 
+export type OrderRow = {
+  id: string;
+  name: string;
+  description: string;
+  parcels: number;
+}
+
 export type MyCustomData = {
-  userId: string | null;
+  row: OrderRow | null;
+  target?: EventTarget | null;
   position: null | {
     x: number;
     y: number;
@@ -9,7 +17,7 @@ export type MyCustomData = {
 }
 
 export const defaultCustomData: MyCustomData = { 
-  userId: null,
+  row: null,
   position: null,
 }
 

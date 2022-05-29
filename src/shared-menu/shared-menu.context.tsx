@@ -69,19 +69,8 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
     const [menus, setMenus] = useState<Record<string, T>>({});
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-    const getCustomProps = useCallback((id: string) => {
-      return menus[id] || null;
-    }, [menus]);
-
-    const getEventDetail = useCallback((eventType: string) => {
-      const [id] = eventType.split(' '); // parse id from full event type (id+' '+type)
-      return {
-        customProps: getCustomProps(id),
-      }
-    }, [getCustomProps]);
-
     const eventCollector = useRef<HTMLDivElement | null>(null);
-    const { onEvent, fireEvent: fire } = useEventEmitter(eventCollector, getEventDetail);
+    const { onEvent, fireEvent: fire } = useEventEmitter(eventCollector);
 
     const getEventType = useCallback((id: string, type: MenuEvents) => {
       // should never happen, but...
@@ -102,8 +91,11 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       return onEvent(getEventType(id, type), listener, options);
     }, [onEvent, getEventType]);
 
-    const fireEvent = useCallback((id: string, type: MenuEvents) => {
-      return fire(getEventType(id, type));
+    const fireEvent = useCallback((id: string, type: MenuEvents, customProps: T | null) => {
+      return fire(
+        getEventType(id, type), 
+        customProps ? { customProps } : undefined
+      );
     }, [fire, getEventType]);
   
     const setCustomProps = useCallback((id: string, customProps: T) => {
@@ -113,20 +105,21 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
           [id]: customProps,
         }
       });
-
-      fireEvent(id, 'onUpdate');
+      fireEvent(id, 'onUpdate', customProps);
     }, [setMenus, fireEvent]);
 
     const updateCustomProps = useCallback((id: string, customProps: Partial<T> | null) => {
-      setMenus(currentMenus => ({
-        ...currentMenus,
-        [id]: { 
+      setMenus(currentMenus => {
+        const toSet = { 
           ...currentMenus[id],
           ...customProps
-        },
-      }));
-
-      fireEvent(id, 'onUpdate');
+        }
+        fireEvent(id, 'onUpdate', toSet);
+        return {
+          ...currentMenus,
+          [id]: toSet,
+        }
+      });
     }, [setMenus, fireEvent]);
   
     const show = useCallback((id: string, customProps?: Partial<T>) => {
@@ -137,19 +130,24 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       const isAlreadyShown = activeMenuId === id;
       if (!isAlreadyShown) {        
         if (activeMenuId !== null) {
-          fireEvent(activeMenuId, 'onHide');
+          fireEvent(activeMenuId, 'onHide', null);
         }
         setActiveMenuId(id);
-        fireEvent(id, 'onShow');
+
+        // expedient to have updated state
+        setMenus(allMenus => {
+          fireEvent(id, 'onShow', allMenus[id]);
+          return allMenus;
+        })
       }
-    }, [activeMenuId, fireEvent, updateCustomProps, setActiveMenuId]);
+    }, [activeMenuId, fireEvent, updateCustomProps, setActiveMenuId, setMenus]);
   
     const clear = useCallback((id: string) => {
       const newMenus = { ...menus };
       delete newMenus[id];
       setMenus(newMenus);
 
-      fireEvent(id, 'onClear');
+      fireEvent(id, 'onClear', null);
     }, [setMenus, fireEvent, menus]);
   
     const hide = useCallback((id: string) => {
@@ -160,7 +158,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
         return null; // actually hide
       });
 
-      fireEvent(id, 'onHide');
+      fireEvent(id, 'onHide', null);
     }, [setActiveMenuId, fireEvent]);
   
     const toggle = useCallback((id: string) => {
