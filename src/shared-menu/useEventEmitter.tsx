@@ -6,9 +6,9 @@ import {
 
 export function useEventEmitter<EventDetailType>(
   eventCollector: MutableRefObject<HTMLDivElement | null>,
-  masterGetDetail?: (type: string) => EventDetailType
+  getDetail?: (type: string) => EventDetailType
 ) {
-  const on = useCallback((
+  const onEvent = useCallback((
     type: string, 
     listener: EventListenerOrEventListenerObject, 
     options?: boolean | AddEventListenerOptions | undefined,
@@ -30,28 +30,26 @@ export function useEventEmitter<EventDetailType>(
   ) => {
     if (eventCollector.current) {
       const detailToSet = detail === undefined
-        ? (masterGetDetail && masterGetDetail(type))
+        ? (getDetail && getDetail(type))
         : detail
 
       eventCollector.current.dispatchEvent(
         new CustomEvent(
           type, 
-          (
-            detailToSet 
-              ? { detail: detailToSet } 
-              : undefined
-          )
+          detailToSet 
+            ? { detail: detailToSet } 
+            : undefined
         )
       );
     }
-  }, [eventCollector, masterGetDetail]);
+  }, [eventCollector, getDetail]);
 
   return useMemo(() => ({
     fireEvent,
-    on,
+    onEvent,
   }), [
     fireEvent,
-    on,
+    onEvent,
   ]);
 }
 

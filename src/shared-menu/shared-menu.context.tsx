@@ -81,7 +81,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
     }, [getCustomProps]);
 
     const eventCollector = useRef<HTMLDivElement | null>(null);
-    const { on, fireEvent: fire } = useEventEmitter(eventCollector, getEventDetail);
+    const { onEvent, fireEvent: fire } = useEventEmitter(eventCollector, getEventDetail);
 
     const getEventType = useCallback((id: string, type: MenuEvents) => {
       return `${id}:${type}`;
@@ -93,28 +93,21 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       listener: EventListenerOrEventListenerObject, 
       options?: boolean | AddEventListenerOptions | undefined,
     ) => {
-      return on(getEventType(id, type), listener, options);
-    }, [on, getEventType]);
+      return onEvent(getEventType(id, type), listener, options);
+    }, [onEvent, getEventType]);
 
     const fireEvent = useCallback((id: string, type: MenuEvents) => {
       return fire(getEventType(id, type));
     }, [fire, getEventType]);
   
-    const setCustomProps = useCallback((id: string, customProps: T | null) => {
+    const setCustomProps = useCallback((id: string, customProps: T) => {
       setMenus(currentMenus => {
-        if (customProps) {
-          return {
-            ...currentMenus,
-            [id]: customProps,
-          }
-        } else {
-          delete currentMenus[id];
-          return {
-            ...currentMenus
-          }
+        return {
+          ...currentMenus,
+          [id]: customProps,
         }
       });
-
+      
       fireEvent(id, 'onUpdate');
     }, [setMenus, fireEvent]);
 
@@ -126,6 +119,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
           ...customProps
         },
       }));
+
       fireEvent(id, 'onUpdate');
     }, [setMenus, fireEvent]);
   
@@ -133,8 +127,8 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       if (customProps) {
         updateCustomProps(id, customProps);
       }
-      const isAlreadyShown = activeMenuId === id;
 
+      const isAlreadyShown = activeMenuId === id;
       if (!isAlreadyShown) {        
         if (activeMenuId !== null) {
           fireEvent(activeMenuId, 'onHide');
