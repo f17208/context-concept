@@ -69,6 +69,8 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
     }
   }, [updateCustomProps, addListener, dropdownMenuId]);
 
+  const textToCopy = (target as HTMLElement)?.innerText;
+  
   return (
     <Dropdown
       onMouseLeave={() => hideOnLeave && hide()}
@@ -90,9 +92,9 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
             <DropdownItem onClick={() => alert('copied!')}>
               Copy order link
             </DropdownItem>
-            {target && (target as HTMLElement).innerText && (
+            {textToCopy && (
               <DropdownItem onClick={() => alert('copied!')}>
-                Copy <i>"{(target as HTMLElement).innerText}"</i>
+                Copy <i>"{textToCopy}"</i>
               </DropdownItem>
             )}
             <DropdownItem onClick={() => alert(`...a small step for ${selectedRow.parcels} parcels...`)}>
