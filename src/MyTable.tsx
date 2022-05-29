@@ -34,7 +34,6 @@ export const MyTable: FC<{ id: string }> = ({ id }) => {
           }}
         />
       ),
-      selector: (row: OrderRow) => row.id,
       cell: (row: OrderRow) => (
         <input 
           type="checkbox" 
@@ -110,10 +109,17 @@ export const MyTable: FC<{ id: string }> = ({ id }) => {
         onContextMenu={e => {
           e.preventDefault();
           const path = getDomPath(e.target);
-          // ugly as hell but just for demo
-          const rowId = path.find(p => p.indexOf('row-') > -1)?.split('row-')[1];
-          const row = tableData.find(r => r.id === rowId);
 
+          const ROW_ID_REGEXP = /row-(.*)/;
+          const clickedRowElementId = path.find(elemId =>
+            ROW_ID_REGEXP.test(elemId),
+          );
+          const rowMatch = clickedRowElementId?.match(ROW_ID_REGEXP)
+          const clickedRowId = rowMatch 
+            ? rowMatch[1] // this will be the match of the id, i.e. "row-14" -> "14"
+            : null;
+
+          const row = tableData.find(r => r.id === clickedRowId);
           if (!row) return;
 
           show({

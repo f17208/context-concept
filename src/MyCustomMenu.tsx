@@ -40,12 +40,14 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
 
     // a little bit tricky but we have good control on events' data
     // brings back the menu inside the viewport whenever it overflows
+    // (actually this is just for demo, as it could be handled just by correcting
+    // local values of x and y, instead of writing them back on customProps...)
     const unsubscribeOnUpdate = addListener('onUpdate', (event) => {
       const { x, y } = (event as CustomEvent).detail.customProps?.position || {};
 
       const menuDimensions = document
         .getElementById(dropdownMenuId)?.getBoundingClientRect()
-              
+      
       if (x !== undefined && y !== undefined && menuDimensions) {
         const { width, height } = menuDimensions;
         const left = Math.min(x, window.innerWidth - width);
@@ -88,7 +90,7 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
             <DropdownItem onClick={() => alert('copied!')}>
               Copy order link
             </DropdownItem>
-            {target && (
+            {target && (target as HTMLElement).innerText && (
               <DropdownItem onClick={() => alert('copied!')}>
                 Copy <i>"{(target as HTMLElement).innerText}"</i>
               </DropdownItem>
