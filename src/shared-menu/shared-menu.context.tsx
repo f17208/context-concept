@@ -8,6 +8,7 @@ import {
   ReactNode,
   useRef,
 } from 'react';
+import { useEventEmitter } from './useEventEmitter';
 
 export type MenuEvents = 'onShow' | 'onHide' | 'onClear' | 'onUpdate';
 
@@ -25,12 +26,7 @@ export interface IUseSharedMenu<T> {
     type: MenuEvents, 
     listener: EventListenerOrEventListenerObject, 
     options?: boolean | AddEventListenerOptions | undefined,
-  ) => void;
-  removeListener: (
-    type: MenuEvents, 
-    listener: EventListenerOrEventListenerObject, 
-    options?: boolean | AddEventListenerOptions | undefined,
-  ) => void;
+  ) => (() => void);
 }
 
 // the interface exposed by useContext
@@ -45,10 +41,9 @@ export function createSharedMenuCtx<T>(defaultCustomProps?: T) {
   const defaultState = {
     eventCollector: null,
     activeMenuId: null,
-    hideActive: () => undefined,
+    hideActive: () => void 0,
     useSharedMenu: () => ({
-      addListener: () => undefined,
-      removeListener: () => undefined,
+      addListener: () => () => void 0,
       isActive: false,
       customProps: defaultCustomProps || null,
       show: () => void 0,
@@ -74,7 +69,23 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
     const [menus, setMenus] = useState<Record<string, T>>({});
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
+    const getCustomProps = useCallback((id: string) => {
+      return menus[id] || null;
+    }, [menus]);
+
+    const getEventDetail = useCallback((eventType: string) => {
+      const [id] = eventType.split(':'); // parse id from full event type (id:type)
+      return {
+        customProps: getCustomProps(id),
+      }
+    }, [getCustomProps]);
+
     const eventCollector = useRef<HTMLDivElement | null>(null);
+    const { on, fireEvent: fire } = useEventEmitter(eventCollector, getEventDetail);
+
+    const getEventType = useCallback((id: string, type: MenuEvents) => {
+      return `${id}:${type}`;
+    }, []);
 
     const addMenuEventListener = useCallback((
       id: string,
@@ -82,41 +93,12 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       listener: EventListenerOrEventListenerObject, 
       options?: boolean | AddEventListenerOptions | undefined,
     ) => {
-      
-      if (eventCollector.current) {
-        eventCollector.current.addEventListener(`${id}-${type}`, listener, options);
-      }
-    }, []);
-
-    const removeMenuEventListener = useCallback((
-      id: string,
-      type: MenuEvents, 
-      listener: EventListenerOrEventListenerObject, 
-      options?: boolean | AddEventListenerOptions | undefined,
-    ) => {
-      if (eventCollector.current) {
-        eventCollector.current?.removeEventListener(`${id}-${type}`, listener, options);
-      }
-    }, []);
-
-    const getCustomProps = useCallback((id: string) => {
-      return menus[id] || null;
-    }, [menus]);
+      return on(getEventType(id, type), listener, options);
+    }, [on, getEventType]);
 
     const fireEvent = useCallback((id: string, type: MenuEvents) => {
-      if (eventCollector?.current) {
-        eventCollector.current?.dispatchEvent(
-          new CustomEvent(
-            `${id}-${type}`, 
-            { 
-              detail: {
-                customProps: getCustomProps(id),
-              }
-            }
-          )
-        );
-      }
-    }, [getCustomProps]);
+      return fire(getEventType(id, type));
+    }, [fire, getEventType]);
   
     const setCustomProps = useCallback((id: string, customProps: T | null) => {
       setMenus(currentMenus => {
@@ -208,11 +190,6 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
           listener: EventListenerOrEventListenerObject, 
           options?: boolean | AddEventListenerOptions | undefined,
         ) => addMenuEventListener(id, type, listener, options),
-        removeListener: (
-          type: MenuEvents, 
-          listener: EventListenerOrEventListenerObject, 
-          options?: boolean | AddEventListenerOptions | undefined,
-        ) => removeMenuEventListener(id, type, listener, options),
       };
     }, [
       menus, 
@@ -220,7 +197,6 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       show,
       hide,
       addMenuEventListener,
-      removeMenuEventListener,
       toggle, 
       clear,
       setCustomProps,
@@ -242,8 +218,8 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       <SharedMenuCtx.Provider value={value}>
         {children}
         <div 
-          style={{ maxWidth: 0, maxHeight: 0, opacity: 0}} 
           ref={eventCollector}
+          style={{ maxWidth: 0, maxHeight: 0, opacity: 0 }} 
         />
       </SharedMenuCtx.Provider>
     );

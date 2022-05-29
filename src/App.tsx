@@ -10,7 +10,6 @@ function App() {
   const { 
     show: show1, 
     addListener: addListener1, 
-    removeListener: removeListener1, 
     updateCustomProps: updateCustomProps1,
   } = useSharedMenu('menu-1');
 
@@ -20,11 +19,10 @@ function App() {
     show: show3, 
     isActive: isActive3,
     addListener: addListener3, 
-    removeListener: removeListener3, 
   } = useSharedMenu('menu-3');
 
   useEffect(() => {
-    const handler1 = () => {
+    const unsubscribe1 = addListener1('onShow', () => {
       if (window.confirm('show logout?')) {
         updateCustomProps1({
           userId: '1234',
@@ -34,24 +32,20 @@ function App() {
           userId: null,
         });
       }
-    }
+    }, false);
 
-    const handler3 = () => {
+    const unsubscribe3 = addListener3('onHide', () => {
       console.info('Menu 3 was hidden 😱');
-    }
+    }, false);
 
-    addListener1('onShow', handler1, false);
-    addListener3('onHide', handler3, false);
-    return () => {
-      removeListener1('onShow', handler1, false);
-      removeListener3('onHide', handler3, false);
+    return function cleanup() {
+      unsubscribe1();
+      unsubscribe3();
     }
   }, [
     updateCustomProps1,
     addListener1,
     addListener3,
-    removeListener1,
-    removeListener3,
   ]);
 
   return (
