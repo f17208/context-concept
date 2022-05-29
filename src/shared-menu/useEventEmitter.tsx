@@ -27,16 +27,19 @@ export function useEventEmitter<EventDetailType>(
     type: string, 
     detail?: EventDetailType | null, 
   ) => {
-    if (eventCollector.current) {
-      eventCollector.current.dispatchEvent(
-        new CustomEvent(
-          type, 
-          detail
-            ? { detail } 
-            : undefined
-        )
-      );
-    }
+    // schedule the event asap, asynchronously
+    setTimeout(() => {
+      if (eventCollector.current) {
+        eventCollector.current.dispatchEvent(
+          new CustomEvent(
+            type, 
+            detail
+              ? { detail } 
+              : undefined
+          ),
+        );
+      }
+    });
   }, [eventCollector]);
 
   return useMemo(() => ({

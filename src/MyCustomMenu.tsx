@@ -21,6 +21,7 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
     updateCustomProps, 
     addListener,
   } = useSharedMenu(id);
+
   const { x, y } = customProps?.position || {};
   const selectedRow = customProps?.row || null;
   const target = customProps?.target;
@@ -28,6 +29,8 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
   const dropdownMenuId = useMemo(() => `${id}-dropdown-menu`, [id]);
 
   useEffect(() => {
+    // clear custom props after hiding menu, if we don't want them to be available
+    // the next time the menu is shown.
     const unsubscribeClearRow = addListener('onHide', () => {
       updateCustomProps({
         row: null,
@@ -38,26 +41,24 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
     // a little bit tricky but we have good control on events' data
     // brings back the menu inside the viewport whenever it overflows
     const unsubscribeOnUpdate = addListener('onUpdate', (event) => {
-      setTimeout(() => {        
-        const { x, y } = (event as CustomEvent).detail.customProps?.position || {};
+      const { x, y } = (event as CustomEvent).detail.customProps?.position || {};
 
-        const menuDimensions = document
-          .getElementById(dropdownMenuId)?.getBoundingClientRect()
-                
-        if (x !== undefined && y !== undefined && menuDimensions) {
-          const { width, height } = menuDimensions;
-          const left = Math.min(x, window.innerWidth - width);
-          const top = Math.min(y, window.innerHeight - height);
-          if (x !== left || top !== y) {
-            updateCustomProps({
-              position: {
-                x: left,
-                y: top,
-              }
-            })
-          }
+      const menuDimensions = document
+        .getElementById(dropdownMenuId)?.getBoundingClientRect()
+              
+      if (x !== undefined && y !== undefined && menuDimensions) {
+        const { width, height } = menuDimensions;
+        const left = Math.min(x, window.innerWidth - width);
+        const top = Math.min(y, window.innerHeight - height);
+        if (x !== left || top !== y) {
+          updateCustomProps({
+            position: {
+              x: left,
+              y: top,
+            }
+          })
         }
-      });
+      }
     })
 
     return function cleanup() {
@@ -68,7 +69,6 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
 
   return (
     <Dropdown
-      id={`${id}-dropdown`}
       onMouseLeave={() => hideOnLeave && hide()}
       style={{ position: 'fixed', top: y, left: x, zIndex: 100 }}
       isOpen={isActive}
@@ -98,8 +98,8 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
             </DropdownItem>
           </>
           : <>
-            <DropdownItem>Ship all</DropdownItem>
-            <DropdownItem>Print all labels</DropdownItem>
+            <DropdownItem onClick={() => alert('shipped all!')}>Ship all</DropdownItem>
+            <DropdownItem onClick={() => alert('printed all!')}>Print all labels</DropdownItem>
           </>
       }
       </DropdownMenu>

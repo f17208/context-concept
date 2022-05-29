@@ -42,6 +42,7 @@ export function createSharedMenuCtx<T>(defaultCustomProps?: T) {
     eventCollector: null,
     activeMenuId: null,
     hideActive: () => void 0,
+    clearAll: () => void 0,
     useSharedMenu: () => ({
       addListener: () => () => void 0,
       isActive: false,
@@ -54,7 +55,6 @@ export function createSharedMenuCtx<T>(defaultCustomProps?: T) {
       clear: () => void 0,
     })
   };
-
   return createContext<ISharedMenuCtx<T>>(defaultState);
 }
 
@@ -82,6 +82,8 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       return `${id} ${type}`;
     }, []);
 
+    // adds a listener on a given event type, for a given menu (id)
+    // returns an unsubscribe function you can call to remove the listener
     const addMenuEventListener = useCallback((
       id: string,
       type: MenuEvents, 
@@ -108,7 +110,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       fireEvent(id, 'onUpdate', customProps);
     }, [setMenus, fireEvent]);
 
-    const updateCustomProps = useCallback((id: string, customProps: Partial<T> | null) => {
+    const updateCustomProps = useCallback((id: string, customProps: Partial<T>) => {
       setMenus(currentMenus => {
         const toSet = { 
           ...currentMenus[id],
@@ -142,14 +144,6 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       }
     }, [activeMenuId, fireEvent, updateCustomProps, setActiveMenuId, setMenus]);
   
-    const clear = useCallback((id: string) => {
-      const newMenus = { ...menus };
-      delete newMenus[id];
-      setMenus(newMenus);
-
-      fireEvent(id, 'onClear', null);
-    }, [setMenus, fireEvent, menus]);
-  
     const hide = useCallback((id: string) => {
       setActiveMenuId(activeId => {
         if (activeId !== id) {
@@ -160,6 +154,29 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
 
       fireEvent(id, 'onHide', null);
     }, [setActiveMenuId, fireEvent]);
+
+    const hideActive = useCallback(() => {
+      if (activeMenuId) hide(activeMenuId);
+    }, [activeMenuId, hide]);
+      
+    const clear = useCallback((id: string) => {
+      hide(id);
+
+      const newMenus = { ...menus };
+      delete newMenus[id];
+      setMenus(newMenus);
+
+      fireEvent(id, 'onClear', null);
+    }, [setMenus, hide, fireEvent, menus]);
+
+    const clearAll = useCallback(() => {
+      hideActive();
+      setMenus(allMenus => {
+        const allIds = Object.keys(allMenus);
+        allIds.map(id => fireEvent(id, 'onClear', null));
+        return {};
+      });
+    }, [setMenus, fireEvent, hideActive]);
   
     const toggle = useCallback((id: string) => {
       if (id === activeMenuId) {
@@ -168,10 +185,6 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
         show(id);
       }
     }, [activeMenuId, show, hide]);
-  
-    const hideActive = useCallback(() => {
-      if (activeMenuId) hide(activeMenuId);
-    }, [activeMenuId, hide]);
 
     const useSharedMenu = useCallback((id: string) => {  
       return {
@@ -206,10 +219,12 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       hideActive,
       activeMenuId,
       useSharedMenu,
+      clearAll,
     }), [
       hideActive,
       activeMenuId,
       useSharedMenu,
+      clearAll,
     ]);
   
     return (
@@ -225,5 +240,4 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
 
   return SharedMenuProvider;
 }
-
 

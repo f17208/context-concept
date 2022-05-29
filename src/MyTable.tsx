@@ -7,7 +7,6 @@ import { getDomPath } from './utils';
 
 export const MyTable: FC<{ id: string }> = ({ id }) => {
   const { useSharedMenu } = useContext(MyCustomDataContextMenuCtx);
-
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
 
   const toggleSelectRow = useCallback((id: string) => {
@@ -18,9 +17,7 @@ export const MyTable: FC<{ id: string }> = ({ id }) => {
     }
   }, [selectedRowIds, setSelectedRowIds]);
 
-  const { 
-    show, 
-  } = useSharedMenu(id);
+  const { show } = useSharedMenu(id);
 
   const columns = useMemo(() => [
     {
@@ -84,13 +81,6 @@ export const MyTable: FC<{ id: string }> = ({ id }) => {
             onContextMenu={e => {
               e.preventDefault();
               e.stopPropagation();
-              show({
-                row,
-                position: {
-                  x: e.clientX,
-                  y: e.clientY,
-                }
-              });
             }}
             onClick={e => {
               show({
@@ -124,18 +114,16 @@ export const MyTable: FC<{ id: string }> = ({ id }) => {
           const rowId = path.find(p => p.indexOf('row-') > -1)?.split('row-')[1];
           const row = tableData.find(r => r.id === rowId);
 
-          const canShow = row || selectedRowIds.length > 0;
+          if (!row) return;
 
-          if (canShow) {
-            show({
-              row: selectedRowIds.length ? null : row,
-              target: e.target,
-              position: {
-                x: e.clientX,
-                y: e.clientY,
-              },
-            });
-          }
+          show({
+            row: selectedRowIds.length ? null : row,
+            target: e.target,
+            position: {
+              x: e.clientX,
+              y: e.clientY,
+            },
+          });
         }}
       >
         <DataTable
