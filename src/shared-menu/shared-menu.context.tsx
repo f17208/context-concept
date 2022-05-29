@@ -36,7 +36,7 @@ export interface ISharedMenuCtx<T> {
   useSharedMenu: (id: string) => IUseSharedMenu<T>;
 }
 
-// we need a function for creating the context with generics, and passing it the default custom props
+// we need a function for creating the context with generics, and passing the default custom props
 export function createSharedMenuCtx<T>(defaultCustomProps?: T) {
   const defaultState = {
     eventCollector: null,
@@ -93,6 +93,8 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       return onEvent(getEventType(id, type), listener, options);
     }, [onEvent, getEventType]);
 
+    // formats id+type properly & sets customProps as mandatory (T or null)
+    // just to avoid forgetting it when the function is called, later on
     const fireEvent = useCallback((id: string, type: MenuEvents, customProps: T | null) => {
       return fire(
         getEventType(id, type), 
@@ -100,6 +102,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       );
     }, [fire, getEventType]);
   
+    // replaces customProps for a given id with a brand new value
     const setCustomProps = useCallback((id: string, customProps: T) => {
       setMenus(currentMenus => {
         return {
@@ -110,6 +113,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       fireEvent(id, 'onUpdate', customProps);
     }, [setMenus, fireEvent]);
 
+    // merges new customProps with the existing value
     const updateCustomProps = useCallback((id: string, customProps: Partial<T>) => {
       setMenus(currentMenus => {
         const toSet = { 
@@ -124,6 +128,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       });
     }, [setMenus, fireEvent]);
   
+    // shows the menu & updates customProps optionally
     const show = useCallback((id: string, customProps?: Partial<T>) => {
       if (customProps) {
         updateCustomProps(id, customProps);
@@ -144,6 +149,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       }
     }, [activeMenuId, fireEvent, updateCustomProps, setActiveMenuId, setMenus]);
   
+    // hides the menu
     const hide = useCallback((id: string) => {
       setActiveMenuId(activeId => {
         if (activeId !== id) {
@@ -155,10 +161,12 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       fireEvent(id, 'onHide', null);
     }, [setActiveMenuId, fireEvent]);
 
+    // hides the active menu, if any
     const hideActive = useCallback(() => {
       if (activeMenuId) hide(activeMenuId);
     }, [activeMenuId, hide]);
       
+    // removes all customProps for the given menu
     const clear = useCallback((id: string) => {
       hide(id);
 
@@ -169,6 +177,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       fireEvent(id, 'onClear', null);
     }, [setMenus, hide, fireEvent, menus]);
 
+    // clears all menus
     const clearAll = useCallback(() => {
       hideActive();
       setMenus(allMenus => {
@@ -178,6 +187,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       });
     }, [setMenus, fireEvent, hideActive]);
   
+    // shows/hides the given menu
     const toggle = useCallback((id: string) => {
       if (id === activeMenuId) {
         hide(id);
@@ -186,6 +196,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
       }
     }, [activeMenuId, show, hide]);
 
+    // useful hook returning all the functions to operate with a given menu, passed by id
     const useSharedMenu = useCallback((id: string) => {  
       return {
         isActive: activeMenuId === id,

@@ -50,5 +50,3 @@ export function useEventEmitter<EventDetailType>(
     onEvent,
   ]);
 }
-
-
