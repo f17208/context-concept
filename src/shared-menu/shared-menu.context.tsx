@@ -74,7 +74,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
     }, [menus]);
 
     const getEventDetail = useCallback((eventType: string) => {
-      const [id] = eventType.split(':'); // parse id from full event type (id:type)
+      const [id] = eventType.split(' '); // parse id from full event type (id+' '+type)
       return {
         customProps: getCustomProps(id),
       }
@@ -84,7 +84,13 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
     const { onEvent, fireEvent: fire } = useEventEmitter(eventCollector, getEventDetail);
 
     const getEventType = useCallback((id: string, type: MenuEvents) => {
-      return `${id}:${type}`;
+      // should never happen, but...
+      if (type.includes(' ')) {
+        throw new Error('Invalid event type: cannot contain spaces');
+      }
+      // we're using a space to separate id and type
+      // because it's an illegal character for HTML ids, so it will never cause parsing errors
+      return `${id} ${type}`;
     }, []);
 
     const addMenuEventListener = useCallback((
@@ -107,7 +113,7 @@ export function getSharedMenuProvider<T>(SharedMenuCtx: Context<ISharedMenuCtx<T
           [id]: customProps,
         }
       });
-      
+
       fireEvent(id, 'onUpdate');
     }, [setMenus, fireEvent]);
 
