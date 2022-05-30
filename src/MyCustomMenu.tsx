@@ -1,6 +1,6 @@
 import { FC, ReactNode, useContext, useEffect, useMemo } from 'react';
 import { Dropdown, DropdownItem, DropdownMenu } from 'reactstrap';
-import { MyCustomDataContextMenuCtx } from './types';
+import { MyCustomData, MyCustomDataContextMenuCtx } from './types';
 
 export interface MyCustomMenuProps {
   id: string;
@@ -42,8 +42,8 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
     // brings back the menu inside the viewport whenever it overflows
     // (actually this is just for demo, as it could be handled just by correcting
     // local values of x and y, instead of writing them back on customProps...)
-    const unsubscribeOnUpdate = addListener('onUpdate', (event) => {
-      const { x, y } = (event as CustomEvent).detail.customProps?.position || {};
+    const unsubscribeOnUpdate = addListener('onUpdate', (customProps?: MyCustomData) => {
+      const { x, y } = customProps?.position || {};
 
       const menuDimensions = document
         .getElementById(dropdownMenuId)?.getBoundingClientRect()
@@ -70,7 +70,7 @@ export const MyCustomMenu: FC<MyCustomMenuProps> = ({
   }, [updateCustomProps, addListener, dropdownMenuId]);
 
   const textToCopy = (target as HTMLElement)?.innerText;
-  
+
   return (
     <Dropdown
       onMouseLeave={() => hideOnLeave && hide()}
